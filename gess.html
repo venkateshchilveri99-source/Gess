@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quantum Guess - Number Guessing Game</title>
+  
+  <!-- Modern Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Styling variables and CSS Reset */
+    :root {
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --secondary: #06b6d4;
+      --secondary-hover: #0891b2;
+      --success: #10b981;
+      --success-hover: #059669;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --bg-dark: #0f0c1b;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-primary: #ffffff;
+      --text-secondary: #a78bfa;
+      --glow-color: rgba(139, 92, 246, 0.35);
+      --font-outfit: 'Outfit', 'Poppins', system-ui, -apple-system, sans-serif;
+      --font-poppins: 'Poppins', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-poppins);
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient shifting gradient background */
+    .bg-gradient {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -3;
+      background: linear-gradient(-45deg, #0d0a1b, #20133c, #072a3e, #180927);
+      background-size: 400% 400%;
+      animation: gradientBG 18s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Floating light blobs for glassmorphism background illumination */
+    .ambient-blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.35;
+      z-index: -2;
+      animation: drift 25s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    .blob-1 {
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, var(--primary) 0%, rgba(139, 92, 246, 0) 70%);
+      top: -120px;
+      left: -120px;
+    }
+
+    .blob-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--secondary) 0%, rgba(6, 182, 212, 0) 70%);
+      bottom: -150px;
+      right: -100px;
+      animation-delay: -7s;
+      animation-duration: 30s;
+    }
+
+    @keyframes drift {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(120px, 60px) scale(1.15); }
+      100% { transform: translate(-60px, 120px) scale(0.85); }
+    }
+
+    /* Floating Particles background container */
+    .particles-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      bottom: -120px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 75%);
+      border-radius: 50%;
+      animation: floatUp linear infinite;
+    }
+
+    @keyframes floatUp {
+      0% {
+        transform: translateY(0) scale(0.8) rotate(0deg);
+        opacity: 0;
+      }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% {
+        transform: translateY(-120vh) scale(1.4) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* Celebration Confetti Canvas */
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    /* Layout Wrapper */
+    .container {
+      width: 100%;
+      max-width: 490px;
+      padding: 24px;
+      z-index: 10;
+    }
+
+    /* Glowing Glassmorphic Game Card */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 45px 35px;
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4),
+                  inset 0 0 32px rgba(255, 255, 255, 0.02),
+                  0 0 40px var(--glow-color);
+      text-align: center;
+      transition: box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+                  border-color 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+      animation: slideUpFade 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Subtle Card Shimmer Overlay */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        35deg,
+        rgba(255, 255, 255, 0) 30%,
+        rgba(255, 255, 255, 0.025) 50%,
+        rgba(255, 255, 255, 0) 70%
+      );
+      transform: rotate(30deg);
+      pointer-events: none;
+      animation: shimmerEffect 9s linear infinite;
+    }
+
+    @keyframes shimmerEffect {
+      0% { transform: translate(-30%, -30%) rotate(30deg); }
+      100% { transform: translate(30%, 30%) rotate(30deg); }
+    }
+
+    @keyframes slideUpFade {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Glowing states on win/lose */
+    .card.win-state {
+      box-shadow: 0 12px 40px rgba(16, 185, 129, 0.3),
+                  inset 0 0 32px rgba(255, 255, 255, 0.05),
+                  0 0 60px rgba(16, 185, 129, 0.55);
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .card.shake-animation {
+      animation: cardShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    @keyframes cardShake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
+    /* Card Header details */
+    .game-badge {
+      display: inline-block;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: var(--text-secondary);
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1);
+    }
+
+    h1 {
+      font-family: var(--font-outfit);
+      font-weight: 800;
+      font-size: 2.2rem;
+      line-height: 1.25;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 40%, #d8b4fe 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .game-description {
+      color: #9cb1d6;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .game-description strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Game controls container */
+    .control-area {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    /* Modern text input styling */
+    .input-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    #guess-input {
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      padding: 16px 20px;
+      border-radius: 18px;
+      font-size: 1.6rem;
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      text-align: center;
+      outline: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 100%;
+      box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    #guess-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 18px rgba(139, 92, 246, 0.45), inset 0 4px 10px rgba(0,0,0,0.2);
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    /* Disabled status */
+    #guess-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Hide standard browser spin controls */
+    #guess-input::-webkit-outer-spin-button,
+    #guess-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    #guess-input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    /* Large Interactive Button styles */
+    .btn {
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      padding: 16px 28px;
+      border-radius: 18px;
+      border: none;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, var(--primary), #a855f7);
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: linear-gradient(135deg, #7c3aed, #9333ea);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.55);
+      transform: translateY(-2px);
+    }
+
+    .btn-submit:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-play-again {
+      background: linear-gradient(135deg, var(--success), #34d399);
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-play-again:hover {
+      background: linear-gradient(135deg, #059669, #10b981);
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.55);
+      transform: translateY(-2px);
+    }
+
+    .btn-play-again:active {
+      transform: translateY(0);
+    }
+
+    /* Feedback Message Area */
+    .feedback-msg {
+      min-height: 52px;
+      margin-bottom: 24px;
+      font-weight: 500;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      line-height: 1.4;
+    }
+
+    .feedback-msg.too-high {
+      color: #f97316; /* Soft warning orange */
+      text-shadow: 0 0 12px rgba(249, 115, 22, 0.25);
+      animation: floatJump 0.4s ease;
+    }
+
+    .feedback-msg.too-low {
+      color: #06b6d4; /* Vibrant info cyan */
+      text-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+      animation: floatJump 0.4s ease;
+    }
+
+    .feedback-msg.correct-ans {
+      color: #10b981; /* Success bright green */
+      text-shadow: 0 0 18px rgba(16, 185, 129, 0.5);
+      font-size: 1.35rem;
+      font-weight: 700;
+      animation: popCelebrate 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .feedback-msg.error-msg {
+      color: #f87171; /* Danger warning pink-red */
+      text-shadow: 0 0 12px rgba(248, 113, 113, 0.25);
+      animation: inlineShake 0.4s ease;
+    }
+
+    @keyframes floatJump {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes popCelebrate {
+      0% { transform: scale(0.7); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes inlineShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* Stats Grid Panels */
+    .stats-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 85px;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      background: rgba(0, 0, 0, 0.3);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-number {
+      font-family: var(--font-outfit);
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    .stat-desc {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    /* Hint System Styling */
+    .btn-hint {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #9cb1d6;
+      width: 100%;
+      height: 100%;
+      padding: 10px;
+      border-radius: 18px;
+    }
+
+    .btn-hint:not(:disabled) {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+      border-color: rgba(6, 182, 212, 0.3);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.08);
+    }
+
+    .btn-hint:not(:disabled):hover {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+      border-color: rgba(6, 182, 212, 0.5);
+      color: #06b6d4;
+      transform: scale(1.02);
+    }
+
+    .btn-hint:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .hint-alert-box {
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      border-radius: 18px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      animation: slideDownIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      text-align: left;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.05);
+    }
+
+    @keyframes slideDownIn {
+      from {
+        opacity: 0;
+        transform: translateY(-15px);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 150px;
+      }
+    }
+
+    .hint-inner {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .hint-bulb {
+      font-size: 1.4rem;
+      line-height: 1;
+      padding-top: 2px;
+      animation: bulbGlow 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes bulbGlow {
+      from { filter: drop-shadow(0 0 2px rgba(6, 182, 212, 0.4)); }
+      to { filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.9)); }
+    }
+
+    #hint-message {
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    #hint-message strong {
+      color: #06b6d4;
+      font-weight: 600;
+    }
+
+    /* Guess History panel */
+    .history-card {
+      margin-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 20px;
+      text-align: left;
+      animation: fadeInEffect 0.6s ease;
+    }
+
+    @keyframes fadeInEffect {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .history-title {
+      font-family: var(--font-outfit);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-count {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      color: #ffffff;
+    }
+
+    .pills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 95px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    /* Custom Webkit scrollbar for Guess History scroll area */
+    .pills-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .pills-list::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 100px;
+    }
+    .pills-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 100px;
+    }
+
+    .history-pill {
+      font-family: var(--font-outfit);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      animation: pillSpawn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes pillSpawn {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .history-pill.too-high-pill {
+      background: rgba(249, 115, 22, 0.08);
+      border-color: rgba(249, 115, 22, 0.25);
+      color: #ffa166;
+    }
+
+    .history-pill.too-low-pill {
+      background: rgba(6, 182, 212, 0.08);
+      border-color: rgba(6, 182, 212, 0.25);
+      color: #67e8f9;
+    }
+
+    /* Play again wrapper actions */
+    .win-actions {
+      margin-top: 10px;
+      animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Mobile Responsive styling overrides */
+    @media (max-width: 480px) {
+      .container {
+        padding: 16px;
+      }
+      
+      .card {
+        padding: 35px 22px;
+        border-radius: 22px;
+      }
+
+      h1 {
+        font-size: 1.85rem;
+      }
+
+      .game-description {
+        font-size: 0.85rem;
+        margin-bottom: 22px;
+      }
+
+      #guess-input {
+        padding: 14px 16px;
+        font-size: 1.45rem;
+        border-radius: 14px;
+      }
+
+      .btn {
+        padding: 14px 20px;
+        font-size: 1rem;
+        border-radius: 14px;
+      }
+
+      .stat-card {
+        min-height: 75px;
+        padding: 10px;
+        border-radius: 14px;
+      }
+
+      .stat-number {
+        font-size: 1.45rem;
+      }
+
+      .stat-desc {
+        font-size: 0.65rem;
+        letter-spacing: 1px;
+      }
+
+      .btn-hint {
+        border-radius: 14px;
+      }
+
+      .hint-alert-box {
+        border-radius: 14px;
+        padding: 12px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating animated background elements -->
+  <div class="bg-gradient"></div>
+  <div class="ambient-blob blob-1"></div>
+  <div class="ambient-blob blob-2"></div>
+  <div class="particles-container" id="particles-container"></div>
+
+  <!-- Celebratory canvas overlay -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="container">
+    <div class="card" id="game-card">
+      <div class="game-badge">Quantum Guess</div>
+      
+      <div class="card-header">
+        <h1>Guess the Number</h1>
+        <p class="game-description" id="game-subtitle">
+          I am thinking of a secret number between <strong>1</strong> and <strong>100</strong>. Can you crack the code?
+        </p>
+      </div>
+
+      <!-- Core Game Panel -->
+      <div class="game-playfield">
+        <div class="control-area">
+          <div class="input-wrapper">
+            <input 
+              type="number" 
+              id="guess-input" 
+              placeholder="Enter number (1-100)" 
+              min="1" 
+              max="100" 
+              pattern="[0-9]*" 
+              inputmode="numeric" 
+              autocomplete="off"
+            >
+          </div>
+          <button id="submit-btn" class="btn btn-submit">
+            <span>Submit Guess</span>
+          </button>
+        </div>
+
+        <!-- Feedback Messages -->
+        <div id="feedback-display" class="feedback-msg"></div>
+
+        <!-- Attempts & Hint Interface Grid -->
+        <div class="stats-container">
+          <div class="stat-card">
+            <div class="stat-number" id="attempts-val">0</div>
+            <div class="stat-desc">Attempts</div>
+          </div>
+          <div class="stat-card" style="padding: 0; background: transparent; border: none;">
+            <button id="hint-btn" class="btn-hint" disabled>
+              <span style="font-size: 1.1rem; vertical-align: middle;">🔒</span>
+              <span id="hint-btn-label" style="display: block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-top: 4px;">Hint Locked</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Hint Panel -->
+        <div id="hint-panel" class="hint-alert-box hidden">
+          <div class="hint-inner">
+            <span class="hint-bulb">💡</span>
+            <span id="hint-message">Unlock hints after 3 wrong tries.</span>
+          </div>
+        </div>
+
+        <!-- Historic pills of user inputs -->
+        <div class="history-card hidden" id="history-section">
+          <div class="history-title">
+            <span>Previous Guesses</span>
+            <span class="history-count" id="history-count-badge">0</span>
+          </div>
+          <div class="pills-list" id="history-pills-container"></div>
+        </div>
+      </div>
+
+      <!-- Restart Actions (Shown when won) -->
+      <div class="win-actions hidden" id="win-actions-container">
+        <button id="restart-btn" class="btn btn-play-again">
+          <span>Play Again 🎮</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State management variables
+    let targetNumber = 0;
+    let attemptsCount = 0;
+    let guessesList = [];
+    let hintsUsed = 0;
+    let isGameOver = false;
+
+    // Grab UI references
+    const cardEl = document.getElementById('game-card');
+    const inputEl = document.getElementById('guess-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const feedbackDisplay = document.getElementById('feedback-display');
+    const attemptsVal = document.getElementById('attempts-val');
+    const hintBtn = document.getElementById('hint-btn');
+    const hintBtnLabel = document.getElementById('hint-btn-label');
+    const hintPanel = document.getElementById('hint-panel');
+    const hintMessage = document.getElementById('hint-message');
+    const historySection = document.getElementById('history-section');
+    const historyPillsContainer = document.getElementById('history-pills-container');
+    const historyCountBadge = document.getElementById('history-count-badge');
+    const winActionsContainer = document.getElementById('win-actions-container');
+    const restartBtn = document.getElementById('restart-btn');
+    const particlesContainer = document.getElementById('particles-container');
+
+    // Confetti canvas context definitions
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let confettiParticles = [];
+    let isConfettiPlaying = false;
+
+    // Web Audio Synthesizer Object
+    const SoundFX = {
+      audioCtx: null,
+
+      init() {
+        if (!this.audioCtx) {
+          this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      },
+
+      play(type) {
+        this.init();
+        if (!this.audioCtx) return;
+
+        // Auto-resume if context was suspended by browser autoplay policy
+        if (this.audioCtx.state === 'suspended') {
+          this.audioCtx.resume();
+        }
+
+        const now = this.audioCtx.currentTime;
+
+        switch(type) {
+          case 'success': {
+            // Rising synth major chord arpeggio for win
+            const chords = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+            chords.forEach((noteFreq, idx) => {
+              const osc = this.audioCtx.createOscillator();
+              const gain = this.audioCtx.createGain();
+              osc.connect(gain);
+              gain.connect(this.audioCtx.destination);
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(noteFreq, now + idx * 0.08);
+
+              gain.gain.setValueAtTime(0.12, now + idx * 0.08);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+
+              osc.start(now + idx * 0.08);
+              osc.stop(now + idx * 0.08 + 0.38);
+            });
+            break;
+          }
+          case 'click': {
+            // High-speed UI click feedback pop
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.frequency.setValueAtTime(450, now);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.04);
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+            osc.start(now);
+            osc.stop(now + 0.04);
+            break;
+          }
+          case 'high': {
+            // Descending sweep for "Too High"
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(580, now);
+            osc.frequency.exponentialRampToValueAtTime(260, now + 0.22);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+            osc.start(now);
+            osc.stop(now + 0.22);
+            break;
+          }
+          case 'low': {
+            // Ascending sweep for "Too Low"
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(260, now);
+            osc.frequency.exponentialRampToValueAtTime(580, now + 0.22);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+            osc.start(now);
+            osc.stop(now + 0.22);
+            break;
+          }
+          case 'error': {
+            // Classic alert buzzer
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(130, now);
+            osc.frequency.setValueAtTime(95, now + 0.08);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.setValueAtTime(0.15, now + 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+            osc.start(now);
+            osc.stop(now + 0.18);
+            break;
+          }
+        }
+      }
+    };
+
+    // Confetti physics particle class
+    class Confetti {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * -canvas.height - 20;
+        this.size = Math.random() * 8 + 6;
+        this.color = `hsl(${Math.random() * 360}, 95%, 65%)`;
+        this.vx = Math.random() * 4 - 2;
+        this.vy = Math.random() * 5 + 4;
+        this.rot = Math.random() * 360;
+        this.vRot = Math.random() * 6 - 3;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rot += this.vRot;
+
+        // Loop particle to top if animation is running
+        if (this.y > canvas.height) {
+          if (isConfettiPlaying) {
+            this.y = -20;
+            this.x = Math.random() * canvas.width;
+          }
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate((this.rot * Math.PI) / 180);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+        ctx.restore();
+      }
+    }
+
+    function triggerConfetti() {
+      confettiParticles = [];
+      isConfettiPlaying = true;
+      for (let i = 0; i < 120; i++) {
+        confettiParticles.push(new Confetti());
+      }
+      requestAnimationFrame(renderConfetti);
+    }
+
+    function renderConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let alive = false;
+
+      confettiParticles.forEach(p => {
+        p.update();
+        p.draw();
+        if (p.y <= canvas.height) {
+          alive = true;
+        }
+      });
+
+      if (isConfettiPlaying || alive) {
+        requestAnimationFrame(renderConfetti);
+      }
+    }
+
+    function resizeConfettiCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    // Floating background particles generation
+    function initBackgroundParticles() {
+      particlesContainer.innerHTML = '';
+      const count = 15;
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const diameter = Math.random() * 60 + 20;
+        const leftSide = Math.random() * 100;
+        const animDelay = Math.random() * 8;
+        const animDuration = Math.random() * 20 + 12;
+
+        p.style.width = `${diameter}px`;
+        p.style.height = `${diameter}px`;
+        p.style.left = `${leftSide}%`;
+        p.style.animationDelay = `${animDelay}s`;
+        p.style.animationDuration = `${animDuration}s`;
+
+        particlesContainer.appendChild(p);
+      }
+    }
+
+    // Primary Game Initializer / Reset Loop
+    function startNewGame() {
+      targetNumber = Math.floor(Math.random() * 100) + 1;
+      attemptsCount = 0;
+      guessesList = [];
+      hintsUsed = 0;
+      isGameOver = false;
+      isConfettiPlaying = false;
+
+      // Clear Canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Reset controls & indicators
+      attemptsVal.textContent = '0';
+      feedbackDisplay.textContent = 'Enter a guess above to start the challenge!';
+      feedbackDisplay.className = 'feedback-msg';
+      inputEl.value = '';
+      inputEl.disabled = false;
+      submitBtn.disabled = false;
+      
+      // Hint reset
+      hintBtn.disabled = true;
+      hintBtnLabel.textContent = 'Hint Locked';
+      hintBtn.querySelector('span').textContent = '🔒';
+      hintPanel.classList.add('hidden');
+      
+      // Hide sections
+      historySection.classList.add('hidden');
+      historyPillsContainer.innerHTML = '';
+      winActionsContainer.classList.add('hidden');
+      cardEl.classList.remove('win-state');
+
+      // Autofocus
+      setTimeout(() => inputEl.focus(), 150);
+    }
+
+    // Input Validation error triggers
+    function triggerValidationError(errorText) {
+      SoundFX.play('error');
+      feedbackDisplay.textContent = errorText;
+      feedbackDisplay.className = 'feedback-msg error-msg';
+      
+      // Trigger card shake animation
+      cardEl.classList.add('shake-animation');
+      setTimeout(() => cardEl.classList.remove('shake-animation'), 450);
+    }
+
+    // Mathematical Prime Helper for Hints
+    function checkIsPrime(n) {
+      if (n <= 1) return false;
+      for (let i = 2; i <= Math.sqrt(n); i++) {
+        if (n % i === 0) return false;
+      }
+      return true;
+    }
+
+    // Generate Contextual Game Hints
+    function createDynamicHint() {
+      const hintOptions = [];
+
+      // Hint Option A: Modulo / Odd or Even
+      if (targetNumber % 2 === 0) {
+        hintOptions.push("The secret number is an <strong>EVEN</strong> number.");
+      } else {
+        hintOptions.push("The secret number is an <strong>ODD</strong> number.");
+      }
+
+      // Hint Option B: Division or Prime properties
+      if (checkIsPrime(targetNumber)) {
+        hintOptions.push("The secret number is a <strong>PRIME number</strong> (divisible only by 1 and itself).");
+      } else {
+        const factors = [];
+        for (let i = 3; i <= 9; i++) {
+          if (targetNumber % i === 0) factors.push(i);
+        }
+        if (factors.length > 0) {
+          const selectedFactor = factors[Math.floor(Math.random() * factors.length)];
+          hintOptions.push(`The secret number is a <strong>multiple of ${selectedFactor}</strong>.`);
+        } else if (targetNumber % 2 === 0) {
+          hintOptions.push("The secret number is a <strong>multiple of 4</strong>.");
+        } else {
+          hintOptions.push("The secret number is a composite number.");
+        }
+      }
+
+      // Hint Option C: Target boundaries approximation
+      const deltaRange = Math.floor(Math.random() * 5) + 5; // offset range 5-9
+      const minBound = Math.max(1, targetNumber - deltaRange);
+      const maxBound = Math.min(100, targetNumber + deltaRange);
+      hintOptions.push(`The secret number lies between <strong>${minBound}</strong> and <strong>${maxBound}</strong>.`);
+
+      // Rotate/Select hint using hintsUsed tracker
+      const selected = hintOptions[hintsUsed % hintOptions.length];
+      hintsUsed++;
+      return selected;
+    }
+
+    // Game guess evaluation handler
+    function processGuessSubmission() {
+      if (isGameOver) return;
+
+      const rawInputVal = inputEl.value.trim();
+      
+      // 1. Check for empty inputs
+      if (rawInputVal === '') {
+        triggerValidationError("⚠️ Input is empty! Please write a number.");
+        return;
+      }
+
+      const parsedGuess = parseInt(rawInputVal, 10);
+
+      // 2. Validate numeric boundaries
+      if (isNaN(parsedGuess) || parsedGuess < 1 || parsedGuess > 100) {
+        triggerValidationError("⚠️ Invalid guess! Enter a number between 1 and 100.");
+        return;
+      }
+
+      // 3. Prevent duplicate submissions
+      if (guessesList.includes(parsedGuess)) {
+        triggerValidationError(`⚠️ You already guessed ${parsedGuess}! Try another number.`);
+        return;
+      }
+
+      // Accept guess and log details
+      attemptsCount++;
+      attemptsVal.textContent = attemptsCount;
+      guessesList.push(parsedGuess);
+      
+      // Update UI history badges
+      historySection.classList.remove('hidden');
+      historyCountBadge.textContent = attemptsCount;
+
+      const pill = document.createElement('span');
+      pill.className = 'history-pill';
+
+      // 4. Compare input to secret target
+      if (parsedGuess === targetNumber) {
+        // Success / Winning state
+        isGameOver = true;
+        SoundFX.play('success');
+        triggerConfetti();
+
+        feedbackDisplay.textContent = `🎉 Correct! You guessed the number in ${attemptsCount} attempts!`;
+        feedbackDisplay.className = 'feedback-msg correct-ans';
+        
+        cardEl.classList.add('win-state');
+        inputEl.disabled = true;
+        submitBtn.disabled = true;
+
+        // Hide hint btn/panel and show play again controls
+        hintPanel.classList.add('hidden');
+        winActionsContainer.classList.remove('hidden');
+
+        pill.innerHTML = `${parsedGuess} 🏆`;
+        pill.classList.add('correct-pill');
+      } else {
+        // Incorrect guesses logic
+        inputEl.value = '';
+        inputEl.focus();
+
+        const isTooHigh = parsedGuess > targetNumber;
+        
+        if (isTooHigh) {
+          SoundFX.play('high');
+          feedbackDisplay.textContent = "Too High! Try a smaller number ↓";
+          feedbackDisplay.className = 'feedback-msg too-high';
+          
+          pill.innerHTML = `${parsedGuess} &darr;`;
+          pill.classList.add('too-high-pill');
+        } else {
+          SoundFX.play('low');
+          feedbackDisplay.textContent = "Too Low! Try a bigger number ↑";
+          feedbackDisplay.className = 'feedback-msg too-low';
+          
+          pill.innerHTML = `${parsedGuess} &uarr;`;
+          pill.classList.add('too-low-pill');
+        }
+
+        // Hint trigger activation (Unlocks at 3 failures)
+        if (attemptsCount >= 3) {
+          hintBtn.disabled = false;
+          hintBtnLabel.textContent = "Get Hint";
+          hintBtn.querySelector('span').textContent = '💡';
+        }
+      }
+
+      // Append badge pill to start of history listing
+      historyPillsContainer.insertBefore(pill, historyPillsContainer.firstChild);
+    }
+
+    // Trigger reveal of dynamic hints
+    function triggerHintReveal() {
+      if (attemptsCount < 3) return;
+      SoundFX.play('click');
+      
+      const newHint = createDynamicHint();
+      hintMessage.innerHTML = newHint;
+      hintPanel.classList.remove('hidden');
+    }
+
+    // Global Action listener hookups
+    submitBtn.addEventListener('click', () => {
+      SoundFX.play('click');
+      processGuessSubmission();
+    });
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        processGuessSubmission();
+      }
+    });
+
+    hintBtn.addEventListener('click', triggerHintReveal);
+    restartBtn.addEventListener('click', () => {
+      SoundFX.play('click');
+      startNewGame();
+    });
+
+    window.addEventListener('resize', resizeConfettiCanvas);
+
+    // Initial setup configurations
+    window.addEventListener('load', () => {
+      resizeConfettiCanvas();
+      initBackgroundParticles();
+      startNewGame();
+    });
+  </script>
+</body>
+</html>
